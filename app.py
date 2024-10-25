@@ -108,5 +108,26 @@ if not call_df.empty and not put_df.empty:
     oi_analysis_df = pd.DataFrame(oi_analysis_data)
     st.table(oi_analysis_df)
 
+    # Display descriptive table for Open Interest Analysis
+    st.write("### Open Interest Analysis Descriptions")
+    oi_descriptions = {
+        "Data": [
+            "Open Interest Upper Boundary", "Open Interest Lower Boundary", "Open Interest",
+            "Put Call Ratio (PCR)", "Call Exits", "Put Exits", "Call In The Money (ITM)", "Put In The Money (ITM)"
+        ],
+        "Description": [
+            "Highest and 2nd Highest Call Open Interest contracts and their corresponding Strike Prices.",
+            "Highest and 2nd Highest Put Open Interest contracts and their corresponding Strike Prices.",
+            "Indicates if the latest OI data record indicates Bearish or Bullish signs near the Strike Price.",
+            "Sum Total of Put Open Interest contracts divided by Sum Total of Call Open Interest contracts.",
+            "Indicates if Call writers are exiting near the given Strike Price in the latest OI data record.",
+            "Indicates if Put writers are exiting near the given Strike Price in the latest OI data record.",
+            "Indicates if Call writers are exiting far OTM strike prices showing extreme bullishness.",
+            "Indicates if Put writers are exiting far OTM strike prices showing extreme bearishness."
+        ]
+    }
+    oi_description_df = pd.DataFrame(oi_descriptions)
+    st.table(oi_description_df)
+
 else:
     st.warning("No option chain data available for the selected date.")
