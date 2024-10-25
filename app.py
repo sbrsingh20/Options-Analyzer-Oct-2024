@@ -8,6 +8,20 @@ NSE_INDEX_URL = "https://www.nseindia.com/api/option-chain-indices?symbol={}"
 NSE_STOCK_URL = "https://www.nseindia.com/api/option-chain-equities?symbol={}"
 HEADERS = {'User-Agent': 'Mozilla/5.0'}
 
+# Predefined strike prices
+strike_price_options = [
+    22250.00, 22300.00, 22350.00, 22400.00, 22450.00, 22500.00, 22550.00, 22600.00, 22650.00, 22700.00,
+    22750.00, 22800.00, 22850.00, 22900.00, 22950.00, 23000.00, 23050.00, 23100.00, 23150.00, 23200.00,
+    23250.00, 23300.00, 23350.00, 23400.00, 23450.00, 23500.00, 23550.00, 23600.00, 23650.00, 23700.00,
+    23750.00, 23800.00, 23850.00, 23900.00, 23950.00, 24000.00, 24050.00, 24100.00, 24150.00, 24200.00,
+    24250.00, 24300.00, 24350.00, 24400.00, 24450.00, 24500.00, 24550.00, 24600.00, 24650.00, 24700.00,
+    24750.00, 24800.00, 24850.00, 24900.00, 24950.00, 25000.00, 25050.00, 25100.00, 25150.00, 25200.00,
+    25250.00, 25300.00, 25350.00, 25400.00, 25450.00, 25500.00, 25550.00, 25600.00, 25650.00, 25700.00,
+    25750.00, 25800.00, 25850.00, 25900.00, 25950.00, 26000.00, 26050.00, 26100.00, 26150.00, 26200.00,
+    26250.00, 26300.00, 26350.00, 26400.00, 26450.00, 26500.00, 26550.00, 26600.00, 26650.00, 26700.00,
+    26750.00, 26800.00, 26850.00, 26900.00, 26950.00, 27000.00
+]
+
 # Load option chain data function
 @st.cache_data
 def load_option_chain(symbol, expiry_date, mode):
@@ -28,15 +42,6 @@ def load_option_chain(symbol, expiry_date, mode):
         st.error("Failed to load data from NSE. Please try again later.")
         return pd.DataFrame(), pd.DataFrame()
 
-# Get unique strike prices with a 100-point gap
-def get_strike_prices(option_chain_df):
-    if 'strikePrice' in option_chain_df.columns:
-        strike_prices = option_chain_df['strikePrice'].unique()
-        return sorted(strike_prices[::100])  # 100-point interval
-    else:
-        st.warning("Strike Price data unavailable.")
-        return []
-
 # Streamlit app layout
 st.title("NSE Option Chain Analyzer")
 
@@ -48,14 +53,10 @@ expiry_date = st.date_input("Select Expiry Date", min_value=datetime.date.today(
 # Load option chain data
 call_df, put_df = load_option_chain(symbol, expiry_date, mode)
 
-# Strike price selection with fallback to user input
-strike_prices = get_strike_prices(call_df)
-if strike_prices:
-    selected_strike_price = st.selectbox("Select Strike Price", strike_prices)
-else:
-    selected_strike_price = st.number_input("Enter Strike Price", min_value=0, step=50)
+# User selection for predefined strike prices
+selected_strike_price = st.selectbox("Select Strike Price", strike_price_options)
 
-# Filtered data based on selected or entered strike price
+# Filtered data based on selected strike price
 if not call_df.empty and not put_df.empty:
     filtered_call_df = call_df[call_df['strikePrice'] == selected_strike_price]
     filtered_put_df = put_df[put_df['strikePrice'] == selected_strike_price]
@@ -98,17 +99,14 @@ if not call_df.empty and not put_df.empty:
     call_itm = "Yes" if (put_sum / call_sum) > 1.5 else "No" if call_sum != 0 else "N/A"
     put_itm = "Yes" if (call_sum / put_sum) > 1.5 else "No" if put_sum != 0 else "N/A"
     
-    # Display label data
+    # Display Open Interest Analysis as a table
     st.write("### Open Interest Analysis")
-    st.write(f"**Call Sum**: {call_sum} (in Thousands for Index / Tens for Stock)")
-    st.write(f"**Put Sum**: {put_sum} (in Thousands for Index / Tens for Stock)")
-    st.write(f"**Difference**: {difference}")
-    st.write(f"**Call Boundary**: {call_boundary} - Indicates {'Bearish' if call_boundary > 0 else 'Bullish'} signal")
-    st.write(f"**Put Boundary**: {put_boundary} - Indicates {'Bullish' if put_boundary > 0 else 'Bearish'} signal")
-    st.write(f"**Open Interest Trend**: {open_interest_trend}")
-    st.write(f"**Put-Call Ratio (PCR)**: {put_call_ratio}")
-    st.write(f"**Call In The Money (ITM)**: {call_itm}")
-    st.write(f"**Put In The Money (ITM)**: {put_itm}")
+    oi_analysis_data = {
+        "Parameter": ["Call Sum", "Put Sum", "Difference", "Call Boundary", "Put Boundary", "Open Interest Trend", "Put-Call Ratio (PCR)", "Call In The Money (ITM)", "Put In The Money (ITM)"],
+        "Value": [call_sum, put_sum, difference, call_boundary, put_boundary, open_interest_trend, put_call_ratio, call_itm, put_itm]
+    }
+    oi_analysis_df = pd.DataFrame(oi_analysis_data)
+    st.table(oi_analysis_df)
 
 else:
     st.warning("No option chain data available for the selected date.")
